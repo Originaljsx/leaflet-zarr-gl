@@ -1,8 +1,20 @@
-# zarr-gl — a custom WebGL Zarr layer for Leaflet
+# leaflet-zarr-gl
 
-A standalone Leaflet layer that renders multiscale Zarr v3 pyramids with WebGL2.
-Plain ESM, no build step; Leaflet and [zarrita](https://github.com/manzt/zarrita.js)
-are the only dependencies.
+A standalone Leaflet layer that renders multiscale Zarr v3 pyramids — and
+Icechunk-versioned stores — with WebGL2.
+
+Extracted from [`zarr-leaflet-viewers`](https://github.com/Originaljsx/zarr-leaflet-viewers),
+where it started as one component among several map demos, once it became
+clear the layer itself is reusable well beyond that repo. `zarr-leaflet-viewers`
+now pulls this repo back in as a git submodule at `zarr-gl/`, so nothing about
+how its pages import the layer changed.
+
+## Install
+
+There's no package yet — no `package.json`, no npm publish, no build step.
+This is plain ES modules today. A consumer either vendors these files directly
+or, as `zarr-leaflet-viewers` does, adds this repo as a git submodule and
+imports straight from the checked-out path:
 
 ```js
 import L from 'leaflet'
@@ -144,6 +156,34 @@ pan is what made the layer flash black.
 | `shaders.js` | vertex/fragment shaders, program and colormap helpers |
 | `projection.js` | `map.options.crs` → shader projection coefficients |
 | `caching-store.js` | byte-range cache and request dedupe in front of `FetchStore` |
+
+## Dependencies
+
+Just three, and only one of them always loaded:
+
+- [`leaflet`](https://leafletjs.com/) — the layer extends `L.Layer` and reuses
+  `L.Util.throttle`; nothing else about Leaflet is required.
+- [`zarrita`](https://github.com/manzt/zarrita.js) — reads plain Zarr v3
+  stores (`FetchStore`, wrapped by `caching-store.js`).
+- [`icechunk-js`](https://github.com/earth-mover/icechunk) — only for stores
+  whose URL matches `/\.icechunk(\/|$|\?|#)/`. It's imported lazily
+  (`await import('icechunk-js')` in `zarr-source.js`) so plain-Zarr consumers
+  never pay for it.
+
+This repo does **not** depend on, and has no relationship to,
+[`zarr-maps`](https://github.com/Originaljsx/zarr-leaflet-viewers/tree/main/zarr-maps),
+the older, separate rendering approach also vendored in `zarr-leaflet-viewers`
+for a handful of legacy comparison pages. `zarr-gl` reads Zarr/Icechunk data
+itself, end to end, through `zarrita` and `icechunk-js` — it shares no code
+and no runtime dependency with `zarr-maps`.
+
+## Used by
+
+Both live in [`zarr-leaflet-viewers`](https://github.com/Originaljsx/zarr-leaflet-viewers),
+where this layer is checked out as the `zarr-gl/` submodule:
+
+- `mur-leaflet-gl.html` — MUR sea-surface-temperature pyramid
+- `swot-leaflet-gl.html` — SWOT SSHA, including the Icechunk-backed store
 
 ## Notes and limits
 
